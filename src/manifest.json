@@ -1,0 +1,19 @@
+{
+  "name": "Chat GPT Bookmarks",
+  "version": "1.0",
+  "manifest_version": 3,
+  "description": "Adds a bookmark option to ChatGPT conversations.",
+  "permissions": [],
+  "icons": {
+    "16": "chatgpt_bookmark_16.png",
+    "48": "chatgpt_bookmark_48.png",
+    "128": "chatgpt_bookmark_128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
