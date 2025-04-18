@@ -11,13 +11,10 @@ const observer = new MutationObserver(() => {
     // .find(div => div.textContent.trim() === "Today");
 
     if (target) {
-        // console.log("✅ Found the 'Today' div:", target);
-
         // Check if a div with the specific id already exists
         const existingDiv = document.getElementById('inserted-div-id');
         if (existingDiv) {
-        // console.log("❌ The div with id 'inserted-div-id' already exists. Skipping insertion.");
-        return; // Skip the insertion if the div already exists
+            return;
         }
 
         // Get the grandparent (parent of the parent)
@@ -74,11 +71,11 @@ const getBookmarksDivContent = () => {
 }
 
 const getListOfBookmarksHtml = () => {
-    return getListOfAllBookmarks().map((bookmark, index) => { 
+    return getListOfAllBookmarks().map((bookmark, index) => {
         return `
             <li class="relative" data-testid="history-item-3">
                 <div draggable="true" class="no-draggable group rounded-lg active:opacity-90 bg-[var(--item-background-color)] h-9 text-sm screen-arch:bg-transparent relative" style="--item-background-color: var(--sidebar-surface-primary);">
-                    <a class="motion-safe:group-active:screen-arch:scale-[98%] motion-safe:group-active:screen-arch:transition-transform motion-safe:group-active:screen-arch:duration-100 flex items-center gap-2 p-2" data-history-item-link="true" href="${bookmark.link}" data-discover="true" style="mask-image: var(--sidebar-mask);">
+                    <a class="motion-safe:group-active:screen-arch:scale-[98%] motion-safe:group-active:screen-arch:transition-transform motion-safe:group-active:screen-arch:duration-100 flex items-center gap-2 p-2" data-history-item-link="true" href="${bookmark.url}" data-discover="true" style="mask-image: var(--sidebar-mask);">
                     <div class="relative grow overflow-hidden whitespace-nowrap" dir="auto" title="${bookmark.title}">${bookmark.title}</div>
                     </a>
                 </div>
@@ -106,39 +103,27 @@ function injectBookmarkOption() {
     if (!existingItem) return;
     // Clone the existing item
     const bookmarkDiv = existingItem.cloneNode(true);
-    // console.log({bookmarkDiv: existingItem.parentNode.innerHTML})
     bookmarkDiv.id = 'bookmark-convo-option';
     bookmarkDiv.textContent = '🔖 Bookmark';
   
     // Replace click handler
     bookmarkDiv.onclick = () => {
-        // Find the parent chat sidebar item that opened the menu
-        const menuTrigger = document.activeElement;
-    
-        if (!menuTrigger) {
-          alert("⚠️ Could not determine the chat to bookmark.");
-          return;
+        const localBookmarkLinkString = sessionStorage.getItem('localBookmarkLink');
+        if(!localBookmarkLinkString) {
+            alert("No bookmark link found");
         }
+     
+        const newBookmark = JSON.parse(localBookmarkLinkString);
+        const {url, title} = newBookmark;
     
-        // Traverse up to find the sidebar link element (usually an <a>)
-        const chatLink = menuTrigger.closest('a');
-        if (!chatLink) {
-          alert("⚠️ Could not find the chat link.");
-          return;
-        }
-    
-        const url = chatLink.href;
-        const title = chatLink.textContent.trim() || 'Untitled Chat';
-    
-        const newBookmark = { title, url };
-    
-        const bookmarks = JSON.parse(localStorage.getItem('bookmarkedConvos') || '[]');
+        const bookmarks = JSON.parse(localStorage.getItem('chatGPTBookmarks') || '[]');
         const alreadyExists = bookmarks.some(b => b.url === url);
     
         if (!alreadyExists) {
           bookmarks.push(newBookmark);
-          localStorage.setItem('bookmarkedConvos', JSON.stringify(bookmarks));
+          localStorage.setItem('chatGPTBookmarks', JSON.stringify(bookmarks));
           alert(`🔖 Bookmarked: ${title}`);
+          deleteBookmarkListFromUI();
         } else {
           alert(`✅ Already bookmarked: ${title}`);
         }
@@ -151,7 +136,6 @@ function injectBookmarkOption() {
   function trackChatClickEvents() {
     // Select all 3-dot buttons in sidebar (menu triggers)
     document.body.addEventListener('click', function (e) {
-        console.log({e})
       const button = e.target.closest('button');
       if (!button) return;
   
@@ -161,10 +145,16 @@ function injectBookmarkOption() {
   
       const link = chatListItem.querySelector('a');
       if (link && link.href) {
-        console.log({link})
+        sessionStorage.setItem('localBookmarkLink', JSON.stringify({url: link.href, title: link.childNodes[0].innerText}))
       }
     });
   }
 
   trackChatClickEvents();
   
+  const deleteBookmarkListFromUI = () => {
+    const element = document.getElementById("inserted-div-id");
+    if (element) {
+      element.remove();
+    }    
+  }
